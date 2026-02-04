@@ -448,6 +448,12 @@ export default function PerfilPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <h3 className="font-semibold truncate">{team.name}</h3>
+                              {team.isLeader && (
+                                <Badge variant="outline" className="gap-1 text-yellow-600 border-yellow-500/50">
+                                  <Trophy className="h-3 w-3" />
+                                  Lider
+                                </Badge>
+                              )}
                               <Badge variant={team.isConfirmed ? "default" : "secondary"}>
                                 {team.isConfirmed ? "Confirmado" : "Pendiente"}
                               </Badge>
@@ -456,15 +462,98 @@ export default function PerfilPage() {
                               {team.event?.name || "Evento"} - {team.memberCount} miembros
                             </p>
                           </div>
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/equipo/${team.id}`}>
-                              <ChevronRight className="h-4 w-4" />
-                            </Link>
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setTeamToLeave(team)}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <LogOut className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/equipo/${team.id}`}>
+                                <ChevronRight className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
                   ))
+                )}
+              </TabsContent>
+
+              <TabsContent value="notificaciones" className="space-y-4">
+                {loadingData ? (
+                  <Card className="border-border/50">
+                    <CardContent className="py-10 text-center">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                ) : notifications.length === 0 ? (
+                  <Card className="border-border/50">
+                    <CardContent className="py-10 text-center">
+                      <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="font-medium mb-2">Sin notificaciones</h3>
+                      <p className="text-sm text-muted-foreground">
+                        No tienes notificaciones nuevas
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  notifications.map((notification) => {
+                    const isUnread = !notification.readBy?.includes(user?.uid || "")
+                    return (
+                      <Card 
+                        key={notification.id} 
+                        className={`border-border/50 transition-colors ${isUnread ? "border-l-4 border-l-primary bg-primary/5" : ""}`}
+                      >
+                        <CardContent className="py-4">
+                          <div className="flex items-start gap-4">
+                            <div className={`p-2 rounded-full shrink-0 ${
+                              notification.type === "announcement" ? "bg-primary/10 text-primary" :
+                              notification.type === "warning" ? "bg-yellow-500/10 text-yellow-500" :
+                              "bg-blue-500/10 text-blue-500"
+                            }`}>
+                              {notification.type === "announcement" ? <Megaphone className="h-5 w-5" /> :
+                               notification.type === "warning" ? <AlertTriangle className="h-5 w-5" /> :
+                               <Info className="h-5 w-5" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold">{notification.title}</h3>
+                                {isUnread && (
+                                  <Badge variant="default" className="text-xs">Nuevo</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString("es-MX", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                }) : ""}
+                              </p>
+                            </div>
+                            {isUnread && notification.id && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleMarkNotificationRead(notification.id!)}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })
                 )}
               </TabsContent>
 
@@ -544,6 +633,96 @@ export default function PerfilPage() {
         </div>
       </div>
       <Footer />
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar perfil</DialogTitle>
+            <DialogDescription>
+              Actualiza tu informacion personal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nombre</Label>
+              <Input
+                value={editForm.displayName}
+                onChange={(e) => setEditForm({ ...editForm, displayName: e.target.value })}
+                placeholder="Tu nombre completo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Escuela</Label>
+              <Input
+                value={editForm.school}
+                onChange={(e) => setEditForm({ ...editForm, school: e.target.value })}
+                placeholder="Nombre de tu escuela"
+              />
+            </div>
+            <div className="space-y-3">
+              <Label>Icono de jugador</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {PLAYER_ICONS.map((icon) => (
+                  <button
+                    key={icon}
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, playerIcon: icon })}
+                    className={`aspect-square rounded-lg border-2 flex items-center justify-center transition-all ${
+                      editForm.playerIcon === icon
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <PlayerIcon icon={icon} size={24} className="text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditProfileOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveProfile} disabled={savingProfile}>
+              {savingProfile ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Leave Team Confirmation */}
+      <AlertDialog open={!!teamToLeave} onOpenChange={(open) => !open && setTeamToLeave(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Salir del equipo</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estas seguro de que quieres salir del equipo "{teamToLeave?.name}"?
+              {teamToLeave?.isLeader && (
+                <span className="block mt-2 text-destructive">
+                  Eres el lider de este equipo. Si sales, el equipo sera eliminado.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeaveTeam}
+              disabled={leavingTeam}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {leavingTeam ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Salir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 }

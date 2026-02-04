@@ -271,8 +271,25 @@ export default function EquiposPage() {
                       )}
                     </div>
 
-                    {/* Members preview */}
-                    {team.members.length > 0 && (
+                    {/* Categories & Prototypes */}
+                    {team.categories && team.categories.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="text-xs text-muted-foreground mb-2">
+                          Categorias y prototipos:
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {team.categories.map((entry, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              <Bot className="h-3 w-3 mr-1" />
+                              {entry.prototypeName} ({entry.category})
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Members count */}
+                    {team.members.length > 0 && !team.categories?.length && (
                       <div className="mt-4 pt-4 border-t border-border">
                         <div className="text-xs text-muted-foreground mb-2">
                           {team.members.length} miembro{team.members.length !== 1 ? "s" : ""} en el equipo

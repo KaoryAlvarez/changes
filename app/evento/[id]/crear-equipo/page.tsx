@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { 
-  ChevronLeft, Loader2, Check, Users, Palette, ImageIcon
+  ChevronLeft, Loader2, Check, Users, Palette, ImageIcon, Bot, Plus, X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +20,7 @@ import {
   createTeam,
   getUserTeamInEvent,
   type Event,
+  type TeamCategoryEntry,
   TEAM_ICONS,
   TEAM_COLORS,
 } from "@/lib/firebase"
@@ -37,6 +38,7 @@ export default function CrearEquipoPage() {
   const [teamName, setTeamName] = useState("")
   const [selectedIcon, setSelectedIcon] = useState<typeof TEAM_ICONS[number]>("robot")
   const [selectedColor, setSelectedColor] = useState(TEAM_COLORS[0].value)
+  const [categories, setCategories] = useState<TeamCategoryEntry[]>([{ category: "", prototypeName: "" }])
 
   const eventId = params.id as string
 
@@ -81,12 +83,16 @@ export default function CrearEquipoPage() {
     setError("")
 
     try {
+      // Filter valid categories
+      const validCategories = categories.filter(c => c.category.trim() && c.prototypeName.trim())
+      
       const teamId = await createTeam(
         eventId,
         teamName.trim(),
         user.uid,
         selectedIcon,
-        selectedColor
+        selectedColor,
+        validCategories
       )
       router.push(`/equipo/${teamId}`)
     } catch (err: unknown) {
@@ -94,6 +100,22 @@ export default function CrearEquipoPage() {
       setError(errorMessage)
       setCreating(false)
     }
+  }
+
+  const handleAddCategory = () => {
+    setCategories([...categories, { category: "", prototypeName: "" }])
+  }
+
+  const handleRemoveCategory = (index: number) => {
+    if (categories.length > 1) {
+      setCategories(categories.filter((_, i) => i !== index))
+    }
+  }
+
+  const handleCategoryChange = (index: number, field: keyof TeamCategoryEntry, value: string) => {
+    const updated = [...categories]
+    updated[index] = { ...updated[index], [field]: value }
+    setCategories(updated)
   }
 
   if (loading || authLoading) {
@@ -216,9 +238,56 @@ export default function CrearEquipoPage() {
                         )}
                       </button>
                     ))}
-                  </div>
+</div>
                 </div>
 
+                {/* Categories */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Bot className="h-4 w-4" />
+                    Categorias y Prototipos
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Agrega las categorias en las que participara tu equipo y el nombre de cada robot
+                  </p>
+                  <div className="space-y-3">
+                    {categories.map((entry, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <div className="flex-1 space-y-2">
+                          <Input
+                            placeholder="Categoria (ej: Seguidor de linea)"
+                            value={entry.category}
+                            onChange={(e) => handleCategoryChange(index, "category", e.target.value)}
+                          />
+                          <Input
+                            placeholder="Nombre del robot/prototipo"
+                            value={entry.prototypeName}
+                            onChange={(e) => handleCategoryChange(index, "prototypeName", e.target.value)}
+                          />
+                        </div>
+                        {categories.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCategory(index)}
+                            className="p-2 text-destructive hover:bg-destructive/10 rounded-md mt-1"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddCategory}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar otra categoria
+                    </Button>
+                  </div>
+                </div>
+                
                 {/* Preview */}
                 <div className="p-4 rounded-lg bg-secondary/30 border border-border">
                   <p className="text-sm text-muted-foreground mb-3">Vista previa:</p>

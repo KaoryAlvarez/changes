@@ -100,6 +100,11 @@ export interface Event {
   createdAt: Date
 }
 
+export interface TeamCategoryEntry {
+  category: string
+  prototypeName: string // Robot or prototype name for this category
+}
+
 export interface Team {
   id?: string
   eventId: string
@@ -108,7 +113,7 @@ export interface Team {
   icon: typeof TEAM_ICONS[number]
   color: string
   inviteCode: string
-  categories: string[] // Multiple categories per team
+  categories: TeamCategoryEntry[] // Multiple categories per team with prototype names
   seed?: number
   isConfirmed: boolean
   createdAt: Date
@@ -295,7 +300,7 @@ export async function createTeam(
   leaderUserId: string,
   icon: typeof TEAM_ICONS[number],
   color: string,
-  categories: string[] = []
+  categories: TeamCategoryEntry[] = []
 ): Promise<string> {
   // Check if user already has a team in this event
   const existingTeam = await getUserTeamInEvent(leaderUserId, eventId)
@@ -400,6 +405,11 @@ export async function updateTeamConfirmation(teamId: string, isConfirmed: boolea
 export async function updateTeamSeed(teamId: string, seed: number): Promise<void> {
   const docRef = doc(db, "teams", teamId)
   await updateDoc(docRef, { seed })
+}
+
+export async function updateTeamCategories(teamId: string, categories: TeamCategoryEntry[]): Promise<void> {
+  const docRef = doc(db, "teams", teamId)
+  await updateDoc(docRef, { categories })
 }
 
 export async function deleteTeam(id: string): Promise<void> {
