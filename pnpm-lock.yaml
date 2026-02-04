@@ -165,7 +165,7 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       zod:
-        specifier: 3.25.76
+        specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
       '@tailwindcss/postcss':
